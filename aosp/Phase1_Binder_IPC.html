@@ -1043,7 +1043,7 @@ When CC creates its own objects:
   </div>
 
   <h2>WHY HAL Exists</h2>
-  <p>Before Android 8, every manufacturer (Samsung, Xiaomi, Jio) modified core Android OS to make their hardware work. Every Android update required every vendor to manually merge their changes — taking 1–2 years. Devices never got updates.</p>
+  <p>Before Android 8, every manufacturer (Samsung, Xiaomi) modified core Android OS to make their hardware work. Every Android update required every vendor to manually merge their changes — taking 1–2 years. Devices never got updates.</p>
 
   <div class="box box-analogy">
     <div class="box-label">🔌 The Power Socket Analogy</div>
@@ -1052,7 +1052,7 @@ When CC creates its own objects:
     <ul>
       <li><strong>Android OS</strong> = The appliance (same plug shape everywhere)</li>
       <li><strong>HAL Interface</strong> = The standard plug shape Google defines</li>
-      <li><strong>Vendor HAL impl</strong> = The adapter Jio/Broadcom makes for their socket</li>
+      <li><strong>Vendor HAL impl</strong> = The adapter makes for their socket</li>
       <li><strong>Hardware chip</strong> = The wall socket (different per device)</li>
     </ul>
     <p style="margin-top:8px">Android OS never changes its plug shape. Vendors only make a new adapter when their hardware changes. Both sides update independently.</p>
@@ -1070,7 +1070,7 @@ When CC creates its own objects:
 │         Android OS              │  <span class="cm">← system partition — Google updates this</span>
 │    (pure AOSP framework)        │
 ├─────────────────────────────────┤  <span class="hl">← THE LINE (vendor interface / HAL)</span>
-│         Vendor code             │  <span class="cm">← vendor partition — Jio/Broadcom owns this</span>
+│         Vendor code             │  <span class="cm">← vendor partition — owns this</span>
 │   (HAL implementations)         │
 │   (kernel drivers, firmware)    │
 └─────────────────────────────────┘</pre>
@@ -1111,10 +1111,10 @@ When CC creates its own objects:
   android.hardware.bluetooth     <span class="cm">← BT chip</span>
   android.hardware.wifi          <span class="cm">← WiFi chip</span>
 
-<span class="cm">Jio/vendor custom HALs (not in AOSP):</span>
-  com.jio.hardware.cas           <span class="cm">← Conditional Access System</span>
-  com.jio.hardware.smartcard     <span class="cm">← CAM/smartcard interface</span>
-  com.jio.hardware.remotectl     <span class="cm">← RF remote control</span></pre>
+<span class="cm">Vendor custom HALs (not in AOSP):</span>
+  com.vendor.hardware.cas           <span class="cm">← Conditional Access System</span>
+  com.vendor.hardware.smartcard     <span class="cm">← CAM/smartcard interface</span>
+  com.vendor.hardware.remotectl     <span class="cm">← RF remote control</span></pre>
 
   <div class="summary">HAL is a stable contract — Android OS presses standard buttons, vendor hardware responds in its own way — HwBinder (/dev/hwbinder) is the dedicated wire between them — @VintfStability freezes the contract so system and vendor partitions can update independently.</div>
 </section>
