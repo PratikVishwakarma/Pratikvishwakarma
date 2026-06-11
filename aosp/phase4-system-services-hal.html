@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 4 — System Services & HAL · STB Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #F7F5F0;
+    --surface:   #FFFFFF;
+    --surface2:  #F0EDE8;
+    --border:    #E2DDD6;
+    --text:      #1C1917;
+    --text2:     #57534E;
+    --text3:     #A8A29E;
+
+    --teal:      #0D9488;
+    --teal-bg:   #F0FDFA;
+    --teal-b:    #99F6E4;
+
+    --amber:     #B45309;
+    --amber-bg:  #FFFBEB;
+    --amber-b:   #FDE68A;
+
+    --violet:    #6D28D9;
+    --violet-bg: #F5F3FF;
+    --violet-b:  #DDD6FE;
+
+    --rose:      #BE123C;
+    --rose-bg:   #FFF1F2;
+    --rose-b:    #FECDD3;
+
+    --blue:      #1D4ED8;
+    --blue-bg:   #EFF6FF;
+    --blue-b:    #BFDBFE;
+
+    --orange:    #C2410C;
+    --orange-bg: #FFF7ED;
+    --orange-b:  #FED7AA;
+
+    --code-bg:   #F4F1EB;
+    --code-text: #1C1917;
+    --code-kw:   #6D28D9;
+    --code-str:  #0D9488;
+    --code-cm:   #A8A29E;
+
+    --ch01: #B45309;
+    --ch02: #0D9488;
+    --ch03: #6D28D9;
+    --ch04: #1D4ED8;
+    --ch05: #BE123C;
+    --ch06: #047857;
+    --ch07: #9333EA;
+    --ch08: #C2410C;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-logo span {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+  .sidebar-logo strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 2px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    text-decoration: none;
+    color: var(--text2);
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { border-left-color: var(--amber); color: var(--amber); background: var(--amber-bg); }
+  .nav-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    background: var(--surface2);
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+
+  /* MAIN */
+  .main { margin-left: 220px; min-height: 100vh; }
+
+  /* COVER */
+  .cover {
+    background: linear-gradient(135deg, #92400E 0%, #B45309 40%, #D97706 100%);
+    color: white;
+    padding: 80px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .cover h1 span { opacity: 0.7; }
+  .cover-sub {
+    font-size: 18px;
+    opacity: 0.85;
+    margin-bottom: 40px;
+    font-weight: 300;
+  }
+  .cover-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    position: relative;
+  }
+  .cover-card {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    backdrop-filter: blur(4px);
+  }
+  .cover-card-num { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; opacity: 0.6; text-transform: uppercase; margin-bottom: 4px; }
+  .cover-card-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .cover-card-sub { font-size: 11px; opacity: 0.65; }
+
+  /* CHAPTER */
+  .chapter { padding: 0 60px 80px; max-width: 900px; }
+  .chapter-header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .chapter-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .chapter h1 {
+    font-family: 'Lora', serif;
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .chapter-sub { font-size: 15px; color: var(--text3); font-weight: 400; }
+
+  /* HEADINGS */
+  .chapter h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  .chapter h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    margin: 28px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* BODY TEXT */
+  .chapter p { color: var(--text2); margin-bottom: 16px; font-size: 15px; line-height: 1.75; }
+  .chapter p strong { color: var(--text); }
+
+  /* BOXES */
+  .box {
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin: 20px 0;
+    border-left: 4px solid;
+  }
+  .box-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+  .box-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+  .box p, .box li { font-size: 14px; line-height: 1.65; color: var(--text2); margin-bottom: 6px; }
+  .box ul { padding-left: 16px; }
+  .box strong { color: var(--text); }
+
+  .box-analogy  { background: var(--teal-bg);   border-color: var(--teal);   }
+  .box-analogy .box-label { color: var(--teal); }
+  .box-tech     { background: var(--violet-bg); border-color: var(--violet); }
+  .box-tech .box-label { color: var(--violet); }
+  .box-tip      { background: var(--teal-bg);   border-color: var(--teal);   }
+  .box-tip .box-label { color: var(--teal); }
+  .box-warn     { background: var(--amber-bg);  border-color: var(--amber);  }
+  .box-warn .box-label { color: var(--amber); }
+  .box-danger   { background: var(--rose-bg);   border-color: var(--rose);   }
+  .box-danger .box-label { color: var(--rose); }
+  .box-info     { background: var(--blue-bg);   border-color: var(--blue);   }
+  .box-info .box-label { color: var(--blue); }
+  .box-orange   { background: var(--orange-bg); border-color: var(--orange); }
+  .box-orange .box-label { color: var(--orange); }
+
+  /* CODE */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: var(--code-text);
+  }
+  .cm  { color: var(--code-cm); font-style: italic; }
+  .kw  { color: var(--code-kw); font-weight: 500; }
+  .str { color: var(--code-str); }
+  .good { color: #047857; }
+  .bad  { color: var(--rose); }
+  .hl  { background: rgba(180,83,9,0.07); display: block; margin: 0 -22px; padding: 0 22px; }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--violet);
+  }
+
+  /* TABLE */
+  .key-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
+  .key-table th {
+    text-align: left; padding: 10px 14px;
+    background: var(--surface2); color: var(--text2);
+    font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 2px solid var(--border);
+  }
+  .key-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); }
+  .key-table tr:last-child td { border-bottom: none; }
+  .key-table tr:hover td { background: var(--surface2); }
+  .key-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--violet);
+    font-weight: 500; white-space: nowrap; width: 35%;
+  }
+  .key-table td:first-child.plain {
+    font-family: 'Sora', sans-serif;
+    font-size: 13px; color: var(--text); font-weight: 600;
+  }
+
+  /* SUMMARY */
+  .summary {
+    background: linear-gradient(135deg, var(--amber-bg), var(--orange-bg));
+    border: 1px solid var(--amber-b);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 32px 0 0;
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .summary::before { content: '💡 '; font-style: normal; }
+
+  /* ANCHORS */
+  .anchors {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin: 28px 0;
+  }
+  .anchors-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--amber); margin-bottom: 16px;
+  }
+  .anchor-item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .anchor-item:last-child { border-bottom: none; }
+  .anchor-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    color: var(--amber); min-width: 22px; padding-top: 2px;
+  }
+  .anchor-text { font-size: 14px; color: var(--text2); line-height: 1.65; }
+  .anchor-text strong { color: var(--text); }
+
+  /* Q&A */
+  .qa-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+  .qa-q {
+    background: var(--surface2); padding: 14px 18px;
+    font-weight: 600; font-size: 14px; color: var(--text);
+    cursor: pointer; display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 12px; user-select: none;
+  }
+  .qa-q:hover { background: var(--border); }
+  .qa-toggle {
+    flex-shrink: 0; width: 20px; height: 20px;
+    background: var(--amber); color: white; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; transition: transform 0.2s; margin-top: 1px;
+  }
+  .qa-a { padding: 14px 18px; font-size: 14px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--border); display: none; }
+  .qa-a pre { font-size: 12px; margin: 10px 0; }
+  .qa-item.open .qa-a { display: block; }
+  .qa-item.open .qa-toggle { transform: rotate(45deg); background: var(--rose); }
+
+  /* ARCH STACK */
+  .arch-stack { margin: 20px 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .arch-layer {
+    padding: 14px 20px; display: flex;
+    justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .arch-layer:last-child { border-bottom: none; }
+  .arch-layer-name { font-size: 14px; font-weight: 600; }
+  .arch-layer-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .arch-layer-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; padding: 3px 8px;
+    border-radius: 4px; font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .arch-app    { background: var(--teal-bg); }
+  .arch-app .arch-layer-name { color: var(--teal); }
+  .arch-app .arch-layer-tag { background: #CCFBF1; color: var(--teal); }
+
+  .arch-sys    { background: var(--amber-bg); }
+  .arch-sys .arch-layer-name { color: var(--amber); }
+  .arch-sys .arch-layer-tag { background: #FEF3C7; color: var(--amber); }
+
+  .arch-flinger { background: var(--violet-bg); }
+  .arch-flinger .arch-layer-name { color: var(--violet); }
+  .arch-flinger .arch-layer-tag { background: #EDE9FE; color: var(--violet); }
+
+  .arch-hal    { background: var(--rose-bg); }
+  .arch-hal .arch-layer-name { color: var(--rose); }
+  .arch-hal .arch-layer-tag { background: #FECDD3; color: var(--rose); }
+
+  .arch-kernel { background: var(--surface2); }
+  .arch-kernel .arch-layer-name { color: var(--text3); }
+  .arch-kernel .arch-layer-tag { background: var(--border); color: var(--text3); }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* BINDER LIMIT TABLE */
+  .limit-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
+  .limit-table th {
+    text-align: left; padding: 10px 14px;
+    background: var(--surface2); color: var(--text2);
+    font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    border-bottom: 2px solid var(--border);
+  }
+  .limit-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); font-size: 13.5px; }
+  .limit-table tr:last-child td { border-bottom: none; }
+  .limit-table tr:hover td { background: var(--surface2); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .chapter { padding: 0 20px 60px; }
+    .cover { padding: 40px 20px; }
+    .cover h1 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span>Study Material</span>
+    <strong>AOSP Internals</strong>
+  </div>
+  <a href="#cover" class="nav-item active"><span class="nav-num" style="background:#FFFBEB;color:#B45309">🏠</span> Overview</a>
+  <a href="#ch01"  class="nav-item"><span class="nav-num" style="background:#FFFBEB;color:#B45309">01</span> The Three-Layer Sandwich</a>
+  <a href="#ch02"  class="nav-item"><span class="nav-num" style="background:#F0FDFA;color:#0D9488">02</span> System Services</a>
+  <a href="#ch03"  class="nav-item"><span class="nav-num" style="background:#F5F3FF;color:#6D28D9">03</span> HAL & Project Treble</a>
+  <a href="#ch04"  class="nav-item"><span class="nav-num" style="background:#EFF6FF;color:#1D4ED8">04</span> Flingers & HAL</a>
+  <a href="#ch05"  class="nav-item"><span class="nav-num" style="background:#FFF1F2;color:#BE123C">05</span> Binder Limits</a>
+  <a href="#ch06"  class="nav-item"><span class="nav-num" style="background:#F0FDF4;color:#047857">06</span> Production Patterns</a>
+  <a href="#ch07"  class="nav-item"><span class="nav-num" style="background:#FAF5FF;color:#9333EA">07</span> Writing a System Service</a>
+  <a href="#ref"   class="nav-item"><span class="nav-num" style="background:#EFF6FF;color:#1D4ED8">Q</span> Interview Q&amp;A</a>
+</nav>
+
+<main class="main">
+
+<!-- COVER -->
+<section id="cover" class="cover">
+  <div class="cover-badge">STB Edition · Phase 4 of 5</div>
+  <h1>System Services<span> & HAL</span></h1>
+  <p class="cover-sub">Going below the app layer into the OS · WHY before HOW · STB Context Throughout</p>
+  <div class="cover-grid">
+    <div class="cover-card"><div class="cover-card-num">Chapter 01</div><div class="cover-card-title">The Three-Layer Sandwich</div><div class="cover-card-sub">App → System Service → HAL → Kernel</div></div>
+    <div class="cover-card"><div class="cover-card-num">Chapter 02</div><div class="cover-card-title">System Services</div><div class="cover-card-sub">system_server, boot lifecycle, service registry</div></div>
+    <div class="cover-card"><div class="cover-card-num">Chapter 03</div><div class="cover-card-title">HAL & Project Treble</div><div class="cover-card-sub">HIDL → AIDL HAL, crash isolation, vendor partition</div></div>
+    <div class="cover-card"><div class="cover-card-num">Chapter 04</div><div class="cover-card-title">Flingers & HAL</div><div class="cover-card-sub">Policy vs execution, who talks to hardware</div></div>
+    <div class="cover-card"><div class="cover-card-num">Chapter 05</div><div class="cover-card-title">Binder Limits</div><div class="cover-card-sub">1MB receiver buffer, 16-thread pool per process</div></div>
+    <div class="cover-card"><div class="cover-card-num">Chapter 06</div><div class="cover-card-title">Production Patterns</div><div class="cover-card-sub">RemoteCallbackList, oneway, HAL thread rules</div></div>
+    <div class="cover-card"><div class="cover-card-num">Chapter 07</div><div class="cover-card-title">Writing a System Service</div><div class="cover-card-sub">AIDL, Stub/Proxy, permissions, threading</div></div>
+  </div>
+</section>
+
+<!-- ═══ CH01 — The Three-Layer Sandwich ═══ -->
+<section id="ch01" class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color:#B45309">Chapter 01</div>
+    <h1>The Three-Layer Sandwich</h1>
+    <div class="chapter-sub">Why Android can't talk to hardware directly — and the architecture that solves it</div>
+  </div>
+
+  <h2>WHY This Architecture Exists</h2>
+  <p>Your Kotlin code cannot talk to hardware directly. That's a Linux kernel problem. The kernel doesn't speak Java. And even if it did — you don't want 50 different apps all poking hardware registers directly. That's chaos, security nightmares, and zero coordination.</p>
+  <p>Android built a deliberate three-layer sandwich to solve this. Every hardware interaction on your STB goes through all three layers, every single time.</p>
+
+  <div class="arch-stack">
+    <div class="arch-layer arch-app">
+      <div><div class="arch-layer-name">Your App / System Service</div><div class="arch-layer-desc">Java/Kotlin — the world you live in. Policy, permissions, business logic.</div></div>
+      <div class="arch-layer-tag">JAVA / KOTLIN</div>
+    </div>
+    <div class="arch-layer arch-flinger">
+      <div><div class="arch-layer-name">HAL (Hardware Abstraction Layer)</div><div class="arch-layer-desc">C/C++ — speaks both Java and kernel. Translator and gatekeeper. Runs in vendor process.</div></div>
+      <div class="arch-layer-tag">C / C++</div>
+    </div>
+    <div class="arch-layer arch-hal">
+      <div><div class="arch-layer-name">Linux Kernel Driver</div><div class="arch-layer-desc">Speaks only hardware — ALSA, DRM/KMS, V4L2, evdev. Never knows about Android.</div></div>
+      <div class="arch-layer-tag">KERNEL SPACE</div>
+    </div>
+    <div class="arch-layer arch-kernel">
+      <div><div class="arch-layer-name">Hardware</div><div class="arch-layer-desc">DAC, display PHY, HDMI controller, IR receiver, video decoder</div></div>
+      <div class="arch-layer-tag">SILICON</div>
+    </div>
+  </div>
+
+  <div class="box box-analogy">
+    <div class="box-label">🏢 The Corporate Hierarchy Analogy</div>
+    <div class="box-title">You never talk to the factory floor directly</div>
+    <ul>
+      <li><strong>You (developer)</strong> = office employee — you request things through proper channels</li>
+      <li><strong>System Service</strong> = department manager — coordinates requests, enforces rules</li>
+      <li><strong>HAL</strong> = factory supervisor — knows both the office language and the machine language</li>
+      <li><strong>Kernel driver</strong> = the machine operator — speaks only machine, not office</li>
+    </ul>
+    <p style="margin-top:10px">Nobody skips layers. The office employee never walks onto the factory floor. The machine operator never attends board meetings. Layers exist because each party speaks a different language and has different responsibilities.</p>
+  </div>
+
+  <h2>Real Path on STB — HDMI Detection</h2>
+  <pre>Your Kotlin code
+    getSystemService(Context.HDMI_CONTROL_SERVICE)
+            │
+            ▼  <span class="cm">← Binder IPC — crosses process boundary</span>
+    HdmiControlService  (system_server)
+            │
+            ▼  <span class="cm">← Binder IPC — crosses another process boundary</span>
+    HDMI HAL  (vendor process — Amlogic/Broadcom implementation)
+            │
+            ▼  <span class="cm">← ioctl() system call — crosses kernel boundary</span>
+    Kernel HDMI driver  (/dev/hdmi or similar)
+            │
+            ▼
+    HDMI PHY hardware</pre>
+
+  <div class="box box-info">
+    <div class="box-label">📺 STB Context</div>
+    <div class="box-title">Why you never see vendor HAL source code</div>
+    <p>The Amlogic or Broadcom HAL implementation that runs on your STB hardware is proprietary binary code. The vendor team ships it as a compiled <code>.so</code> file. HAL is deliberately a legal firewall — Android framework is open source, vendor implementation is not. You consume it through the AIDL HAL interface without ever seeing the source. This is by design.</p>
+  </div>
+
+  <div class="anchors">
+    <div class="anchors-label">5 Anchor Statements · Three-Layer Architecture</div>
+    <div class="anchor-item"><span class="anchor-num">01</span><span class="anchor-text">Every hardware interaction crosses <strong>three layers</strong> — app/service → HAL → kernel. No shortcuts. No layer skipping.</span></div>
+    <div class="anchor-item"><span class="anchor-num">02</span><span class="anchor-text">HAL is both an <strong>abstraction layer and a legal firewall</strong> — framework is open source, vendor HAL implementation is proprietary binary.</span></div>
+    <div class="anchor-item"><span class="anchor-num">03</span><span class="anchor-text">Each layer boundary is a <strong>process boundary</strong> on modern Android — app process, system_server, HAL vendor process, kernel.</span></div>
+    <div class="anchor-item"><span class="anchor-num">04</span><span class="anchor-text">The kernel only receives <strong>ioctl() system calls</strong> from the HAL — it never knows anything about Android, Java, or Binder.</span></div>
+    <div class="anchor-item"><span class="anchor-num">05</span><span class="anchor-text">On STB, <strong>HDMI, audio codec, IR receiver, video decoder</strong> all follow this exact path — app → system_server → vendor HAL process → kernel driver.</span></div>
+  </div>
+
+  <div class="summary">Android can't let apps talk to hardware directly — that's chaos. The three-layer sandwich creates clean separation: policy in Java, translation in C/C++ HAL, execution in the kernel. Every hardware call on your STB crosses all three layers.</div>
+</section>
+
+<!-- ═══ CH02 — System Services ═══ -->
+<section id="ch02" class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color:#0D9488">Chapter 02</div>
+    <h1>System Services</h1>
+    <div class="chapter-sub">system_server, the service registry, and the full boot-to-call path</div>
+  </div>
+
+  <h2>WHY System Services Exist</h2>
+  <p>Your app, the launcher, the OTT player — all separate processes. But they all need access to the same shared resources: the display, the audio hardware, the network stack, input devices.</p>
+  <p><strong>The solution:</strong> One process (<code>system_server</code>) owns all shared resources. Apps request access via Binder IPC. <code>system_server</code> enforces permissions and coordinates access. This is why <code>WindowManagerService</code>, <code>AudioService</code>, <code>ActivityManagerService</code> all live together in <code>system_server</code> — not for convenience, but because only one process should own each piece of shared state.</p>
+
+  <div class="box box-warn">
+    <div class="box-label">⚠️ Critical Distinction — What Lives Where</div>
+    <div class="box-title">Services inside system_server vs separate processes</div>
+    <p><code>AudioManager</code>, <code>HdmiControlManager</code>, <code>WindowManager</code>, <code>ActivityManager</code>, <code>PackageManager</code> — all live <strong>inside system_server</strong>. One process, shared Binder thread pool.</p>
+    <p style="margin-top:8px"><code>AudioFlinger</code>, <code>SurfaceFlinger</code> — these are <strong>separate processes</strong> with their own independent Binder thread pools. Not in system_server.</p>
+  </div>
+
+  <h2>Boot Lifecycle — How Services Are Born</h2>
+  <pre><span class="cm">init process → Zygote → system_server</span>
+
+<span class="cm">Inside SystemServer.java:</span>
+<span class="kw">private void</span> startBootstrapServices() {
+    <span class="cm">// First phase — most critical services</span>
+    ActivityManagerService ams = ActivityManagerService.Lifecycle.startService(...);
+    ServiceManager.addService(<span class="str">"activity"</span>, ams);
+
+    WindowManagerService wms = WindowManagerService.main(...);
+    ServiceManager.addService(<span class="str">"window"</span>, wms);
+}
+
+<span class="kw">private void</span> startOtherServices() {
+    <span class="cm">// Later phase — everything else</span>
+    AudioService audioService = <span class="kw">new</span> AudioService(context);
+    ServiceManager.addService(Context.AUDIO_SERVICE, audioService);
+
+    HdmiControlService hdmi = <span class="kw">new</span> HdmiControlService(context);
+    ServiceManager.addService(Context.HDMI_CONTROL_SERVICE, hdmi);
+    <span class="cm">// ... dozens more services</span>
+}</pre>
+
+  <p><code>ServiceManager</code> is the Binder registry — the phone book of every system service. Every service registers itself with a string name. Clients look up services by that name to get the Binder proxy.</p>
+
+  <h2>getSystemService() — What Actually Happens</h2>
+  <pre>getSystemService(Context.AUDIO_SERVICE)
+    → ContextImpl.getSystemService(<span class="str">"audio"</span>)
+    → SystemServiceRegistry.getSystemService()   <span class="cm">← static lookup map</span>
+    → factory creates AudioManager with IBinder
+        → IBinder from ServiceManager.getService(<span class="str">"audio"</span>)
+<span class="hl">                → this IBinder is a BINDER PROXY to AudioService in system_server
+                → NOT a local AudioService object — a remote reference</span>
+    → every AudioManager method call crosses Binder into system_server</pre>
+
+  <div class="box box-danger">
+    <div class="box-label">⚡ The Key Insight</div>
+    <div class="box-title">You never hold the actual service object — only a proxy</div>
+    <p>When you call <code>audioManager.setStreamVolume()</code>, that call serializes into a Parcel, crosses a Binder boundary, arrives at <code>AudioService</code> in <code>system_server</code> on a Binder thread, executes, and the result is serialized back. Every. Single. Call. This is why calling system services on the main thread with slow operations causes ANR.</p>
+  </div>
+
+  <h2>onBootPhase — Service Startup Ordering</h2>
+  <p>Services can't all start doing work immediately — some depend on others. <code>onBootPhase()</code> lets services wait for the right moment:</p>
+  <table class="key-table">
+    <tr><th>Phase</th><th>When</th><th>Safe to Do</th></tr>
+    <tr><td>PHASE_WAIT_FOR_DEFAULT_DISPLAY</td><td>Display is ready</td><td>Anything needing display — WindowManager, SurfaceFlinger</td></tr>
+    <tr><td>PHASE_LOCK_SETTINGS_READY</td><td>Settings DB readable</td><td>Reading user preferences</td></tr>
+    <tr><td>PHASE_SYSTEM_SERVICES_READY</td><td>Core services ready</td><td>Calling other system services safely</td></tr>
+    <tr><td>PHASE_BOOT_COMPLETED</td><td>User sees launcher</td><td>Everything — this is the safe "fully booted" signal</td></tr>
+  </table>
+
+  <div class="box box-info">
+    <div class="box-label">📺 STB Context</div>
+    <div class="box-title">Why your STB service must wait for PHASE_BOOT_COMPLETED</div>
+    <p>A custom STB service that tries to call <code>HdmiControlService</code> during <code>onStart()</code> will often get null or crash — <code>HdmiControlService</code> may not have registered yet. Always wait for <code>PHASE_BOOT_COMPLETED</code> before calling other services. This is the most common mistake when writing a new system service on STB.</p>
+  </div>
+
+  <div class="anchors">
+    <div class="anchors-label">5 Anchor Statements · System Services</div>
+    <div class="anchor-item"><span class="anchor-num">01</span><span class="anchor-text"><code>system_server</code> is the <strong>single process that owns all shared Android resources</strong>. WMS, AMS, AudioService, HdmiService all live here.</span></div>
+    <div class="anchor-item"><span class="anchor-num">02</span><span class="anchor-text"><code>getSystemService()</code> returns a <strong>Binder proxy</strong>, not the actual service object. Every call crosses a process boundary into system_server.</span></div>
+    <div class="anchor-item"><span class="anchor-num">03</span><span class="anchor-text"><code>ServiceManager</code> is the <strong>Binder registry</strong> — every system service registers by name. Clients look up the Binder handle by that name.</span></div>
+    <div class="anchor-item"><span class="anchor-num">04</span><span class="anchor-text">Services start in phases — <strong>never call other services in <code>onStart()</code></strong>. Wait for <code>PHASE_BOOT_COMPLETED</code> to guarantee dependencies are ready.</span></div>
+    <div class="anchor-item"><span class="anchor-num">05</span><span class="anchor-text">All services inside <code>system_server</code> share <strong>one Binder thread pool of 16 threads</strong> — a slow AudioService call consumes threads that WMS needs too.</span></div>
+  </div>
+
+  <div class="summary">system_server is the gatekeeper of all shared Android resources. getSystemService() gives you a Binder proxy — not the real object. Every method call crosses a process boundary. Services start in phases; call other services only after PHASE_BOOT_COMPLETED.</div>
+</section>
+
+<!-- ═══ CH03 — HAL & Project Treble ═══ -->
+<section id="ch03" class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color:#6D28D9">Chapter 03</div>
+    <h1>HAL &amp; Project Treble</h1>
+    <div class="chapter-sub">From C-style dlopen() chaos to crash-isolated vendor processes</div>
+  </div>
+
+  <h2>WHY HAL Exists — The Real Reason</h2>
+  <p>Everyone says HAL exists to "isolate hardware differences." That's true but incomplete. <strong>The real reason is legal.</strong></p>
+  <p>Android is open source (AOSP). But hardware drivers — the code that talks to Broadcom's Wi-Fi chip, Amlogic's video decoder, MediaTek's SoC — are <strong>proprietary</strong>. OEMs do not want to open-source their hardware code.</p>
+  <p>Without HAL, vendor code would be directly linked into the Android framework — GPL-tainted. OEMs couldn't keep anything private. <strong>HAL is the clean binary interface</strong> that lets Android framework stay open source while vendor implementations stay proprietary blobs.</p>
+
+  <div class="box box-analogy">
+    <div class="box-label">🔌 The Power Socket Analogy</div>
+    <div class="box-title">HAL is the standard socket. Vendor code is the plug.</div>
+    <p>The power socket (HAL interface) is a published standard. Anyone can manufacture a plug (vendor implementation) that fits it. The socket doesn't care what's inside the plug. The plug manufacturer doesn't care what's inside the wall. The interface is the contract. Both sides honor it without knowing each other's internals.</p>
+  </div>
+
+  <h2>Old World — C-Style HAL (Pre Android 8)</h2>
+  <pre><span class="cm">Old way — HAL loaded directly into framework process:</span>
+framework process (system_server)
+    → dlopen(<span class="str">"audio.primary.amlogic.so"</span>)  <span class="cm">← vendor code loaded INTO system_server</span>
+    → calls function pointers directly
+    → vendor code runs IN THE SAME PROCESS
+
+<span class="bad">// If vendor audio HAL has a bug and crashes:</span>
+<span class="bad">// → system_server crashes</span>
+<span class="bad">// → entire Android OS dies</span>
+<span class="bad">// → device reboots</span>
+<span class="bad">// → customer watching live TV sees black screen</span></pre>
+
+  <p>This happened constantly on OEM devices before Android 8. Bad vendor HAL code destabilized the entire OS. On STBs this is unacceptable — a customer can't see "Android is restarting" during live TV.</p>
+
+  <h2>Android 8 — Project Treble + HIDL</h2>
+  <p>Google introduced Project Treble to fix this. The insight: <strong>run HAL implementations in their own isolated vendor processes.</strong></p>
+
+  <pre><span class="good">// New world — HAL in separate vendor process:</span>
+system_server process          vendor HAL process
+─────────────────────          ──────────────────────────
+AudioService            ←HIDL→ audio.primary@2.0-service
+    ↓                               ↓
+AudioFlinger            ←HIDL→ AudioHAL implementation
+                                    ↓
+                              kernel ALSA driver
+
+<span class="good">// If vendor audio HAL crashes now:</span>
+<span class="good">// → only the vendor process dies</span>
+<span class="good">// → system_server survives</span>
+<span class="good">// → Android can restart just the HAL process</span>
+<span class="good">// → 2-second audio hiccup, not a full reboot</span></pre>
+
+  <h2>Android 11+ — AIDL HAL (Current Standard)</h2>
+  <p>HIDL worked but was a separate language and toolchain. Android 11 switched to <strong>AIDL HAL</strong> — using the exact same AIDL you already know from Binder, now also used for HAL interfaces.</p>
+
+  <table class="key-table">
+    <tr><th>Era</th><th>Mechanism</th><th>Problem It Solved</th></tr>
+    <tr><td class="plain">Pre Android 8</td><td>C-style dlopen()</td><td>Nothing — HAL ran in same process, crashes killed system_server</td></tr>
+    <tr><td class="plain">Android 8–10</td><td>HIDL</td><td>Crash isolation via vendor processes. Separate toolchain.</td></tr>
+    <tr><td class="plain">Android 11+</td><td>AIDL HAL</td><td>Same isolation, single toolchain. What you see in modern AOSP.</td></tr>
+  </table>
+
+  <h2>The Vendor Partition — Physical Separation on Your STB</h2>
+  <p>Project Treble's partition separation is physical on your STB's eMMC storage:</p>
+  <pre>/system   <span class="cm">← AOSP framework (platform team) — OTA updatable independently</span>
+/vendor   <span class="cm">← HAL implementations, kernel modules (chip vendor — Amlogic/Broadcom)</span>
+          <span class="cm">   rarely updated, proprietary binary blobs</span>
+/product  <span class="cm">← OEM apps, customizations — most frequently updated</span></pre>
+
+  <div class="box box-info">
+    <div class="box-label">📺 STB Context</div>
+    <div class="box-title">Why STB OTA updates are more complex than phone updates</div>
+    <p>On a phone OTA, Google updates <code>/system</code>. The vendor (Qualcomm) already shipped a HAL that declares compatibility via VINTF manifest. The framework checks at boot — "does the vendor HAL support the interface version I need?" If yes, boot succeeds. On STB, the platform team must verify this compatibility matrix every time they update the framework. A version mismatch = boot failure. This is why STB OTA testing is longer and more careful than standard app updates.</p>
+  </div>
+
+  <div class="anchors">
+    <div class="anchors-label">5 Anchor Statements · HAL & Project Treble</div>
+    <div class="anchor-item"><span class="anchor-num">01</span><span class="anchor-text">HAL is a <strong>legal firewall</strong> — framework stays open source, vendor implementation stays a proprietary binary blob. Both meet at the HAL interface.</span></div>
+    <div class="anchor-item"><span class="anchor-num">02</span><span class="anchor-text">Pre-Treble: vendor HAL ran <strong>inside system_server</strong>. A HAL crash killed the entire OS. Post-Treble: vendor process is isolated — HAL crash = 2-second hiccup, not a reboot.</span></div>
+    <div class="anchor-item"><span class="anchor-num">03</span><span class="anchor-text">HIDL (Android 8) → AIDL HAL (Android 11+). Same crash isolation goal, <strong>one unified toolchain</strong> instead of two.</span></div>
+    <div class="anchor-item"><span class="anchor-num">04</span><span class="anchor-text"><code>/system</code>, <code>/vendor</code>, <code>/product</code> are <strong>physically separate partitions</strong> with different update cycles. Treble made them independently updatable.</span></div>
+    <div class="anchor-item"><span class="anchor-num">05</span><span class="anchor-text">VINTF manifest declares which HAL versions the vendor supports. <strong>Framework checks compatibility at boot</strong> — version mismatch = boot failure.</span></div>
+  </div>
+
+  <div class="summary">HAL exists for legal isolation as much as technical abstraction. Project Treble moved vendor HAL code into isolated processes — a HAL crash no longer reboots the device. /system and /vendor are physically separate partitions, independently updatable.</div>
+</section>
+
+<!-- ═══ CH04 — Flingers & HAL ═══ -->
+<section id="ch04" class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color:#1D4ED8">Chapter 04</div>
+    <h1>Flingers &amp; HAL</h1>
+    <div class="chapter-sub">Policy vs execution — who actually talks to hardware</div>
+  </div>
+
+  <h2>The Pattern You Already Know</h2>
+  <p>From Phase 2 you know: WMS is policy, SurfaceFlinger is execution. The same pattern repeats everywhere in Android. It's not coincidence — it's a deliberate architectural principle.</p>
+
+  <table class="key-table">
+    <tr><th>Service (Policy)</th><th>Lives In</th><th>Flinger (Execution)</th><th>Lives In</th></tr>
+    <tr><td>WindowManagerService</td><td>system_server</td><td>SurfaceFlinger</td><td>surfaceflinger process</td></tr>
+    <tr><td>AudioService</td><td>system_server</td><td>AudioFlinger</td><td>audioserver process</td></tr>
+  </table>
+
+  <div class="box box-danger">
+    <div class="box-label">⚡ The Critical Rule</div>
+    <div class="box-title">system_server services never talk to HAL. Flingers do.</div>
+    <p><code>AudioService</code> and <code>WindowManagerService</code> handle policy only — permissions, routing decisions, who owns what. They never touch hardware. <code>AudioFlinger</code> and <code>SurfaceFlinger</code> own the data pipeline and talk directly to their respective HALs.</p>
+  </div>
+
+  <h2>AudioService vs AudioFlinger — Full Separation</h2>
+
+  <pre><span class="cm">AudioService (system_server) — POLICY ONLY</span>
+  ✓ Manages volume levels
+  ✓ Manages audio focus (who gets to play)
+  ✓ Manages routing rules (speaker vs HDMI vs headphone)
+  ✓ Enforces permissions
+  ✗ Never touches a single audio sample
+
+<span class="cm">AudioFlinger (audioserver) — EXECUTION ONLY</span>
+  ✓ Actually mixes audio streams together
+  ✓ Talks to Audio HAL
+  ✓ Sends PCM data to hardware
+  ✓ Manages audio threads and buffers
+  ✗ Never makes policy decisions</pre>
+
+  <h2>Full Call Chain — Volume Change on STB</h2>
+  <pre>Your App
+    audioManager.setStreamVolume(STREAM_MUSIC, 5, 0)
+            │
+            ▼  <span class="cm">← Binder → system_server</span>
+    AudioService.setStreamVolume()
+            │  <span class="cm">enforceCallingPermission(MODIFY_AUDIO_SETTINGS)</span>
+            │  <span class="cm">updates internal volume table</span>
+            ▼  <span class="cm">← Binder → audioserver process</span>
+    AudioFlinger.setMasterVolume()
+            │
+            ▼  <span class="cm">← AIDL HAL → vendor process</span>
+    Audio HAL implementation
+            │
+            ▼  <span class="cm">← ioctl() → kernel</span>
+    kernel ALSA driver
+            │
+            ▼
+    hardware DAC — volume actually changes</pre>
+
+  <h2>Full Call Chain — Audio Playback on STB</h2>
+  <pre>Your App
+    AudioTrack.write(pcmData)
+            │
+            ▼  <span class="cm">← Binder → audioserver (bypasses system_server entirely)</span>
+    AudioFlinger.write()   <span class="cm">← playback goes DIRECT to AudioFlinger</span>
+            │
+            ▼  <span class="cm">← AIDL HAL → vendor process</span>
+    Audio HAL
+            │
+            ▼
+    kernel ALSA driver → hardware DAC → sound</pre>
+
+  <div class="box box-tip">
+    <div class="box-label">💡 Key Observation</div>
+    <p>For actual audio playback, <code>AudioTrack</code> talks <strong>directly to AudioFlinger</strong> — system_server is not involved at all. system_server (AudioService) is only needed for policy decisions like volume changes, audio focus, and routing. The data pipeline bypasses it entirely for performance.</p>
+  </div>
+
+  <h2>Why Flingers Are Separate Processes — Two Reasons</h2>
+  <p><strong>Stability:</strong> Audio mixing and surface compositing are real-time, complex operations. A bug in mixing code could crash the process. If AudioFlinger was inside system_server, an audio bug = full device reboot. In its own process, it crashes and restarts without touching system_server.</p>
+  <p><strong>Performance:</strong> Flingers need real-time thread priority and tight VSYNC/audio clock coupling. Running inside system_server alongside hundreds of other services makes guaranteed scheduling impossible. Their own process = their own scheduling control.</p>
+
+  <div class="anchors">
+    <div class="anchors-label">5 Anchor Statements · Flingers & HAL</div>
+    <div class="anchor-item"><span class="anchor-num">01</span><span class="anchor-text"><strong>system_server services own policy. Flingers own the data pipeline.</strong> WMS/AudioService never touch hardware. SurfaceFlinger/AudioFlinger talk directly to HAL.</span></div>
+    <div class="anchor-item"><span class="anchor-num">02</span><span class="anchor-text">AudioFlinger lives in <code>audioserver</code> — a <strong>separate process from system_server</strong> with its own independent 16-thread Binder pool.</span></div>
+    <div class="anchor-item"><span class="anchor-num">03</span><span class="anchor-text"><code>AudioTrack</code> playback goes <strong>directly to AudioFlinger</strong>, bypassing system_server entirely. AudioService is only involved for policy — volume, focus, routing.</span></div>
+    <div class="anchor-item"><span class="anchor-num">04</span><span class="anchor-text">Flingers are separate processes for <strong>two reasons: stability</strong> (crash isolation from system_server) and <strong>performance</strong> (real-time scheduling control).</span></div>
+    <div class="anchor-item"><span class="anchor-num">05</span><span class="anchor-text">HAL only ever talks to <strong>Flingers</strong> — never to system_server directly. Policy layer and hardware layer are deliberately kept apart.</span></div>
+  </div>
+
+  <div class="summary">AudioService and WMS own the rules. AudioFlinger and SurfaceFlinger own the data. HAL only ever sees the Flingers. This policy-vs-execution split is the same pattern everywhere in Android — intentional, repeated, and load-bearing.</div>
+</section>
+
+<!-- ═══ CH05 — Binder Limits ═══ -->
+<section id="ch05" class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color:#BE123C">Chapter 05</div>
+    <h1>Binder Limits</h1>
+    <div class="chapter-sub">The 1MB receiver buffer and the 16-thread pool — what they actually mean</div>
+  </div>
+
+  <h2>Limit 1 — The 1MB Binder Buffer</h2>
+  <p>The 1MB buffer is allocated on the <strong>receiving side</strong>. It belongs to the process that receives the Binder call — not the sender.</p>
+
+  <div class="box box-analogy">
+    <div class="box-label">📬 The Mailbox Analogy</div>
+    <div class="box-title">The mailbox belongs to the receiver, not the sender</div>
+    <p>You (sender) can write as many letters as you want. But the mailbox (1MB buffer) belongs to the recipient's house. If multiple senders are all stuffing letters into the same mailbox at the same time, the mailbox can overflow. The senders' capacity is irrelevant — it's the receiver's mailbox that's the bottleneck.</p>
+  </div>
+
+  <pre><span class="cm">WRONG mental model (what most people think):</span>
+<span class="bad">App 1 has its own 1MB budget for outgoing calls</span>
+<span class="bad">App 2 has its own 1MB budget for outgoing calls</span>
+<span class="bad">→ They never conflict</span>
+
+<span class="cm">CORRECT mental model:</span>
+<span class="good">system_server has ONE 1MB receive buffer</span>
+<span class="good">ALL apps sending data TO system_server share this buffer</span>
+
+App 1 → sends 600KB → lands in system_server's 1MB buffer (600KB consumed)
+App 2 → sends 500KB → lands in system_server's 1MB buffer (500KB more needed)
+                       ─────────────────────────────────────────────────────
+                       1100KB > 1MB  ❌  TransactionTooLargeException</pre>
+
+  <p>Both Apps 1 and 2 are sending to the same destination — <code>system_server</code>. They fill the same 1MB inbox simultaneously. That's when the exception hits.</p>
+
+  <div class="box box-tip">
+    <div class="box-label">💡 The Return Direction Too</div>
+    <p>When your service returns data back to the caller — roles reverse. Now your app is the receiver. The returned data lands in your app's 1MB receive buffer. <code>TransactionTooLargeException</code> can throw in either direction. The rule is always the same: whoever is <strong>receiving</strong> at that moment owns the 1MB buffer.</p>
+  </div>
+
+  <table class="limit-table">
+    <tr><th>Scenario</th><th>Whose buffer?</th><th>Risk</th></tr>
+    <tr><td>App sends large Parcel to system_server</td><td>system_server's 1MB</td><td>Shared with all other apps calling system_server simultaneously</td></tr>
+    <tr><td>system_server returns large data to your app</td><td>Your app's 1MB</td><td>Only your app is receiving — lower risk but still a hard limit</td></tr>
+    <tr><td>App 1 sends to system_server, App 2 sends to AudioFlinger</td><td>Different buffers</td><td>No conflict — different receiving processes, different mailboxes</td></tr>
+  </table>
+
+  <div class="box box-warn">
+    <div class="box-label">⚠️ STB Advice</div>
+    <div class="box-title">Never pass large data over Binder — especially during boot</div>
+    <p>During STB boot, many services start simultaneously and all register listeners, request window state, query packages. All those calls compete for system_server's 1MB buffer. Safe rule: keep any single transaction well under 100KB. For large data (Bitmaps, channel lists, EPG data), use <code>ParcelFileDescriptor</code> or shared memory (<code>MemoryFile</code>) — these pass a file descriptor over Binder, not the actual data.</p>
+  </div>
+
+  <h2>Limit 2 — The 16 Binder Thread Pool</h2>
+  <p>Every process that participates in Binder IPC gets its own pool of up to <strong>16 threads</strong> to <em>receive</em> incoming Binder calls. Each process's pool is completely independent.</p>
+
+  <pre><span class="cm">Each process has its own independent pool:</span>
+system_server process     → 16 Binder threads (own pool)
+audioserver process       → 16 Binder threads (own pool)
+Vendor HAL process        → 16 Binder threads (own pool)
+Your App process          → 16 Binder threads (own pool)
+SurfaceFlinger process    → 16 Binder threads (own pool)
+<span class="cm">Each is independent. One pool exhausted has zero effect on others.</span></pre>
+
+  <div class="box box-danger">
+    <div class="box-label">⚡ Important Correction</div>
+    <div class="box-title">Main thread is NOT one of the 16</div>
+    <p>The 16 Binder threads are a <strong>separate pool</strong> dedicated to handling incoming IPC. Your main thread is only involved when you make an outgoing synchronous Binder call from it — in which case it blocks waiting for the response. But it does not consume one of the 16 incoming slots.</p>
+  </div>
+
+  <h2>What system_server's 16 Threads Actually Serve</h2>
+  <pre><span class="cm">system_server's 16 threads serve ALL incoming calls from ALL clients:</span>
+
+App 1  → calling AudioService        → picks Binder thread #1
+App 2  → calling WindowManager       → picks Binder thread #2
+App 3  → calling PackageManager      → picks Binder thread #3
+App 4  → calling ActivityManager     → picks Binder thread #4
+App 5  → calling AudioService again  → picks Binder thread #5
+...
+App 16 → calling anything            → picks Binder thread #16
+                                        ──────────────────────
+App 17 → calling anything            → ❌ all 16 busy — BLOCKS
+                                        waits in kernel until one thread finishes</pre>
+
+  <p>App 17 is not rejected. It blocks in the kernel until a thread frees. But if all 16 threads are blocked on slow operations — database writes, HAL calls, heavy computation — App 17 waits. App 17's main thread is frozen. If it waits more than 5 seconds — ANR.</p>
+
+  <div class="box box-info">
+    <div class="box-label">💡 Threads Are Per-Call, Not Per-Process</div>
+    <p>App 1 can consume 3 threads simultaneously if it makes 3 parallel Binder calls. The pool doesn't reserve one thread per client process — it assigns threads per active incoming call, first come first served.</p>
+  </div>
+
+  <div class="anchors">
+    <div class="anchors-label">5 Anchor Statements · Binder Limits</div>
+    <div class="anchor-item"><span class="anchor-num">01</span><span class="anchor-text">The 1MB buffer belongs to the <strong>receiver</strong>, not the sender. Whoever is receiving at that moment owns the limit — direction doesn't matter.</span></div>
+    <div class="anchor-item"><span class="anchor-num">02</span><span class="anchor-text">Multiple apps sending to <strong>the same receiver simultaneously share one 1MB buffer</strong>. App 1 sending 600KB + App 2 sending 500KB to system_server = overflow.</span></div>
+    <div class="anchor-item"><span class="anchor-num">03</span><span class="anchor-text">16 Binder threads is <strong>per process</strong>, not per-system. system_server has 16. audioserver has 16. Your app has 16. Each pool is completely independent.</span></div>
+    <div class="anchor-item"><span class="anchor-num">04</span><span class="anchor-text">The main thread is <strong>NOT one of the 16</strong>. The 16 are a dedicated incoming IPC pool. Main thread is only involved when it blocks on an outgoing synchronous call.</span></div>
+    <div class="anchor-item"><span class="anchor-num">05</span><span class="anchor-text">All services inside system_server — WMS, AMS, AudioService, HdmiService — <strong>share the same 16 threads</strong>. A slow AudioService call steals threads from WMS.</span></div>
+  </div>
+
+  <div class="summary">1MB is the receiver's inbox — shared by all simultaneous callers. 16 threads is a per-process pool for incoming calls — not per client, not per service within a process. Exhaust either limit and callers block silently until capacity frees.</div>
+</section>
+
+<!-- ═══ CH06 — Production Patterns ═══ -->
+<section id="ch06" class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color:#047857">Chapter 06</div>
+    <h1>Production Patterns</h1>
+    <div class="chapter-sub">RemoteCallbackList, oneway, HAL thread rules — the three things platform engineers get wrong</div>
+  </div>
+
+  <h2>Pattern 1 — RemoteCallbackList</h2>
+  <p>When a client registers a callback listener with your system service, what they pass over Binder is a <strong>proxy object</strong> — a "phone number" back into their process. Your service stores it and calls it when events happen.</p>
+  <p>Now the client app crashes. The process is gone. But your service still has the old proxy. When you call <code>listener.onHdmiChanged(true)</code> — you're calling a dead number. That's <code>DeadObjectException</code>.</p>
+
+  <pre><span class="bad">// ❌ Plain list — dead clients cause exceptions, no cleanup</span>
+<span class="kw">private val</span> listeners = mutableListOf&lt;IHdmiListener&gt;()
+
+<span class="kw">fun</span> notifyHdmiChanged(connected: Boolean) {
+    listeners.forEach { listener ->
+        listener.onHdmiChanged(connected)  <span class="cm">← client process died → DeadObjectException</span>
+        <span class="cm">// exception stops the loop — remaining live clients never notified</span>
+    }
+}</pre>
+
+  <pre><span class="good">// ✅ RemoteCallbackList — production correct pattern</span>
+<span class="kw">private val</span> listeners = RemoteCallbackList&lt;IHdmiListener&gt;()
+
+<span class="kw">fun</span> registerListener(listener: IHdmiListener) {
+    listeners.register(listener)
+    <span class="cm">// RemoteCallbackList internally calls linkToDeath() on this Binder</span>
+    <span class="cm">// When client process dies, kernel fires death notification</span>
+    <span class="cm">// RemoteCallbackList removes the dead entry automatically</span>
+    <span class="cm">// You never deal with DeadObjectException in broadcast</span>
+}
+
+<span class="kw">fun</span> notifyHdmiChanged(connected: Boolean) {
+    <span class="kw">val</span> count = listeners.beginBroadcast()
+    <span class="kw">try</span> {
+        repeat(count) { i ->
+            listeners.getBroadcastItem(i).onHdmiChanged(connected)
+        }
+    } <span class="kw">finally</span> {
+        listeners.finishBroadcast()  <span class="cm">← always call this, even if exception thrown</span>
+    }
+}</pre>
+
+  <div class="box box-tech">
+    <div class="box-label">🔍 How linkToDeath() Works Under the Hood</div>
+    <p><code>linkToDeath()</code> is a method on <code>IBinder</code> that registers a <code>DeathRecipient</code> callback with the Binder kernel driver. When the process owning that Binder dies, the kernel fires the notification synchronously on a Binder thread. <code>RemoteCallbackList</code> uses this to remove dead entries automatically — before you ever try to broadcast to them. Every system service in AOSP that manages callbacks uses <code>RemoteCallbackList</code> for exactly this reason.</p>
+  </div>
+
+  <h2>Pattern 2 — oneway</h2>
+  <p>Every AIDL method is synchronous by default. The caller's thread blocks until your service finishes and returns. For fire-and-forget operations — logging, telemetry, state notifications — there is no reason to block the caller.</p>
+
+  <div class="box box-analogy">
+    <div class="box-label">🍽️ The Restaurant Order Analogy</div>
+    <div class="box-title">oneway = you place the order and go sit down</div>
+    <p><strong>Without oneway:</strong> You stand at the counter frozen while the chef cooks. The counter is blocked. Nobody else can order.</p>
+    <p style="margin-top:8px"><strong>With oneway:</strong> You place the order, get a buzzer, go sit down. The counter is free immediately for the next customer. You'll get the food when it's ready — but you didn't waste your time standing there.</p>
+  </div>
+
+  <pre><span class="cm">In your AIDL interface:</span>
+
+<span class="bad">// ❌ Caller blocks until logging is done — wastes their thread</span>
+void logChannelSwitch(int channelId);
+
+<span class="good">// ✅ Caller returns immediately — fire and forget</span>
+<span class="kw">oneway</span> void logChannelSwitch(int channelId);</pre>
+
+  <pre><span class="bad">// ❌ Without oneway — on main thread</span>
+stbEventService.logChannelSwitch(channelId)
+<span class="cm">// if logging takes 200ms on the service side:</span>
+<span class="cm">// main thread frozen 200ms → during channel switch → visible stutter</span>
+<span class="cm">// block for 5 seconds → ANR</span></pre>
+
+  <div class="box box-danger">
+    <div class="box-label">⚠️ The oneway Trade-off — Read This Before Using It</div>
+    <div class="box-title">oneway has an unbounded queue. No backpressure.</div>
+    <p><code>oneway</code> calls are queued on the service side. If you fire 1000 <code>oneway</code> calls rapidly and the service is slow processing them, they queue up. There is no backpressure — the queue can grow unbounded. Memory pressure, delayed processing, stale events.</p>
+    <p style="margin-top:8px"><strong>Rule:</strong> <code>oneway</code> is the right tool for <strong>infrequent fire-and-forget events</strong> — channel switch telemetry, HDMI hotplug notifications, parental event logging. It is the wrong tool for <strong>high-frequency data streaming</strong> — audio samples, video frames, continuous sensor data.</p>
+  </div>
+
+  <table class="key-table">
+    <tr><th>Use Case</th><th>oneway?</th><th>Why</th></tr>
+    <tr><td class="plain">Log channel switch event</td><td>✅ Yes</td><td>Infrequent, fire-and-forget, no return value needed</td></tr>
+    <tr><td class="plain">Notify HDMI hotplug</td><td>✅ Yes</td><td>Rare event, caller doesn't need to wait for processing</td></tr>
+    <tr><td class="plain">Get current resolution</td><td>❌ No</td><td>Needs a return value — oneway can't return anything</td></tr>
+    <tr><td class="plain">Stream audio PCM data</td><td>❌ No</td><td>High-frequency — queue grows unbounded under load</td></tr>
+    <tr><td class="plain">Update parental PIN</td><td>❌ No</td><td>Needs confirmation the write succeeded</td></tr>
+  </table>
+
+  <h2>Pattern 3 — HAL Thread Rule</h2>
+  <p>HAL runs on a dedicated thread managed by the vendor HAL process. When the HAL calls back into your framework code on a hardware event — HDMI plugged, audio route changed — that callback arrives on the <strong>HAL's own thread</strong>.</p>
+  <p><strong>The rule:</strong> Get off the HAL thread as fast as possible. Receive the event, post it somewhere, return immediately.</p>
+
+  <pre><span class="bad">// ❌ Doing heavy work on HAL callback thread</span>
+<span class="kw">override fun</span> onHdmiEvent(event: HdmiEvent) {
+    database.logHdmiEvent(event)           <span class="cm">← database write — 50ms, HAL thread blocked</span>
+    displayService.updateResolution(event) <span class="cm">← nested Binder call — HAL thread blocked</span>
+    currentHdmiState = event.connected     <span class="cm">← race condition — no lock</span>
+    <span class="cm">// HAL thread is blocked for all of this</span>
+    <span class="cm">// Next hardware event can't be processed until you return</span>
+    <span class="cm">// Missed HDMI events, missed IR keys, stale state</span>
+}</pre>
+
+  <pre><span class="good">// ✅ Return immediately — post to your own thread</span>
+<span class="kw">override fun</span> onHdmiEvent(event: HdmiEvent) {
+    mainHandler.post {
+        processHdmiEvent(event)  <span class="cm">← your actual logic runs off the HAL thread</span>
+    }
+    <span class="cm">// onHdmiEvent returns here — HAL thread is free immediately</span>
+}
+
+<span class="kw">private fun</span> processHdmiEvent(event: HdmiEvent) {
+    <span class="cm">// Now on your own thread — do whatever you need safely</span>
+    database.logHdmiEvent(event)
+    displayService.updateResolution(event.resolution)
+    synchronized(stateLock) { currentHdmiState = event.connected }
+    notifyListeners(event.connected)
+}</pre>
+
+  <div class="box box-tip">
+    <div class="box-label">💡 Same Rule as BroadcastReceiver.onReceive()</div>
+    <p>The HAL thread discipline is identical to what you already know about <code>BroadcastReceiver.onReceive()</code> — you're borrowing a thread you don't own. Do nothing blocking. Post work elsewhere. Return immediately. The consequence of blocking is also similar — queued events back up, and on HAL threads, that means dropped hardware events.</p>
+  </div>
+
+  <div class="anchors">
+    <div class="anchors-label">5 Anchor Statements · Production Patterns</div>
+    <div class="anchor-item"><span class="anchor-num">01</span><span class="anchor-text"><strong>Always use <code>RemoteCallbackList</code></strong> for managing callback listeners in system services. It calls <code>linkToDeath()</code> automatically and removes dead clients before you broadcast.</span></div>
+    <div class="anchor-item"><span class="anchor-num">02</span><span class="anchor-text"><code>linkToDeath()</code> registers a <strong>kernel-level death notification</strong> — when the client process dies, the kernel fires it. Not polling, not timeout — immediate kernel-level signal.</span></div>
+    <div class="anchor-item"><span class="anchor-num">03</span><span class="anchor-text"><code>oneway</code> returns immediately but has an <strong>unbounded queue with no backpressure</strong>. Right for infrequent fire-and-forget. Wrong for high-frequency data streaming.</span></div>
+    <div class="anchor-item"><span class="anchor-num">04</span><span class="anchor-text"><strong>Get off the HAL thread immediately.</strong> Receive the event, post to your own Handler, return. Blocking the HAL thread delays all subsequent hardware events.</span></div>
+    <div class="anchor-item"><span class="anchor-num">05</span><span class="anchor-text">HAL thread discipline = <code>BroadcastReceiver.onReceive()</code> discipline — <strong>you are borrowing a thread you don't own</strong>. Never block it.</span></div>
+  </div>
+
+  <div class="summary">Three production patterns every platform engineer must know: RemoteCallbackList for safe multi-client callbacks with automatic dead-client cleanup, oneway for fire-and-forget with awareness of its unbounded queue, and HAL thread hand-off to avoid starving the hardware event pipeline.</div>
+</section>
+
+<!-- ═══ CH07 — Writing a System Service ═══ -->
+<section id="ch07" class="chapter">
+  <div class="chapter-header">
+    <div class="chapter-num" style="color:#9333EA">Chapter 07</div>
+    <h1>Writing a System Service</h1>
+    <div class="chapter-sub">AIDL interface + Stub/Proxy + permission enforcement + threading discipline</div>
+  </div>
+
+  <h2>The Three-Piece Pattern</h2>
+  <table class="key-table">
+    <tr><th>Piece</th><th>Lives In</th><th>Does</th></tr>
+    <tr><td>AIDL Interface</td><td>.aidl file</td><td>The contract — what methods exist. Generates Stub and Proxy.</td></tr>
+    <tr><td>Server-side Service</td><td>system_server</td><td>Extends Stub. Implements the methods. Enforces permissions.</td></tr>
+    <tr><td>Client-side Manager</td><td>App process</td><td>Wraps the Binder proxy. Hides IPC from callers.</td></tr>
+  </table>
+
+  <h3>Step 1 — The AIDL Interface</h3>
+  <pre><span class="cm">// IHdmiStateService.aidl</span>
+<span class="kw">interface</span> IHdmiStateService {
+    <span class="kw">boolean</span> isHdmiConnected();
+    <span class="kw">int</span> getCurrentResolution();
+    <span class="kw">void</span> registerHdmiListener(IHdmiListener listener);
+    <span class="kw">oneway void</span> logHdmiEvent(<span class="kw">int</span> eventCode);  <span class="cm">← fire-and-forget, no return</span>
+}
+
+<span class="cm">// IHdmiListener.aidl — callback interface</span>
+<span class="kw">interface</span> IHdmiListener {
+    <span class="kw">oneway void</span> onHdmiChanged(<span class="kw">boolean</span> connected);
+}</pre>
+
+  <h3>Step 2 — Server-Side Service (Extends Stub)</h3>
+  <pre><span class="cm">// HdmiStateService.kt — runs in system_server</span>
+<span class="kw">class</span> HdmiStateService(context: Context) : IHdmiStateService.Stub() {
+
+    <span class="kw">private val</span> listeners = RemoteCallbackList&lt;IHdmiListener&gt;()
+
+    <span class="kw">override fun</span> isHdmiConnected(): Boolean {
+<span class="hl">        context.enforceCallingOrSelfPermission(</span>
+<span class="hl">            <span class="str">"com.rjil.permission.HDMI_STATE"</span>, <span class="str">"isHdmiConnected"</span></span>
+<span class="hl">        )  <span class="cm">← permission check BEFORE any logic — always first</span></span>
+        <span class="kw">return</span> nativeIsHdmiConnected()
+    }
+
+    <span class="kw">override fun</span> registerHdmiListener(listener: IHdmiListener) {
+        context.enforceCallingOrSelfPermission(
+            <span class="str">"com.rjil.permission.HDMI_STATE"</span>, <span class="str">"registerHdmiListener"</span>
+        )
+        listeners.register(listener)  <span class="cm">← RemoteCallbackList handles death</span>
+    }
+
+    <span class="kw">override fun</span> logHdmiEvent(eventCode: Int) {
+        <span class="cm">// oneway — no permission check needed for logging</span>
+        mainHandler.post { database.log(eventCode) }
+    }
+
+    <span class="kw">fun</span> notifyHdmiChanged(connected: Bo
